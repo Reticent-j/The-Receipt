@@ -8,7 +8,13 @@ import {
   FREE_TIER_ACTIVE_LISTING_LIMIT,
   isPremiumSubscription,
 } from "@/lib/subscription";
-import type { ListingCategory } from "@/types/database";
+import type { Database, ListingCategory } from "@/types/database";
+
+/** Narrow row for subscription check — explicit type avoids `never` from partial select inference. */
+type ProfileSubscriptionRow = Pick<
+  Database["public"]["Tables"]["profiles"]["Row"],
+  "subscription_status"
+>;
 
 const listingCategorySchema = z.enum([
   "roommate",
@@ -56,13 +62,19 @@ export async function createListing(
     return { ok: false, error: "You must be signed in to post." };
   }
 
-  const { data: me } = await supabase
+  const { data: me, error: meErr } = await supabase
     .from("profiles")
     .select("subscription_status")
     .eq("id", user.id)
     .maybeSingle();
 
-  const premium = isPremiumSubscription(me?.subscription_status);
+  if (meErr) {
+    return { ok: false, error: meErr.message };
+  }
+
+  const premium = isPremiumSubscription(
+    (me as ProfileSubscriptionRow | null)?.subscription_status
+  );
 
   if (!premium) {
     const { count, error: cErr } = await supabase
