@@ -8,7 +8,9 @@ import {
   FREE_TIER_ACTIVE_LISTING_LIMIT,
   isPremiumSubscription,
 } from "@/lib/subscription";
-import type { Database, ListingCategory } from "@/types/database";
+import type { Database, ListingCategory, ListingStatus } from "@/types/database";
+
+type ListingInsert = Database["public"]["Tables"]["listings"]["Insert"];
 
 /** Narrow row for subscription check — explicit type avoids `never` from partial select inference. */
 type ProfileSubscriptionRow = Pick<
@@ -96,18 +98,22 @@ export async function createListing(
   }
 
   const body = parsed.data;
+  const row: ListingInsert = {
+    user_id: user.id,
+    title: body.title,
+    description: body.description || null,
+    category: body.category as ListingCategory,
+    price: body.price ?? null,
+    location: body.location || null,
+    status: "active" as ListingStatus,
+    images: body.images,
+  };
+
+  // PostgREST 12 + hand-written `Database` can infer `.insert()` as `never` on CI;
+  // row is still checked against `ListingInsert` above.
   const { data, error } = await supabase
     .from("listings")
-    .insert({
-      user_id: user.id,
-      title: body.title,
-      description: body.description || null,
-      category: body.category as ListingCategory,
-      price: body.price ?? null,
-      location: body.location || null,
-      status: "active",
-      images: body.images,
-    })
+    .insert(row as never)
     .select("id")
     .single();
 
