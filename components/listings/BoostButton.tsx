@@ -64,7 +64,7 @@ export function BoostButton({
     }
   }
 
-  async function useFreeBoost(): Promise<void> {
+  async function applyFreeMonthlyBoost(): Promise<void> {
     setLoading("free");
     try {
       const res = await fetch("/api/stripe/boost", {
@@ -152,7 +152,7 @@ export function BoostButton({
             variant="outline"
             className="border-primary/50"
             disabled={loading !== null}
-            onClick={() => void useFreeBoost()}
+            onClick={() => void applyFreeMonthlyBoost()}
           >
             {loading === "free"
               ? "Applying…"
