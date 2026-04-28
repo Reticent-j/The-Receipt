@@ -279,7 +279,10 @@ export interface Database {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    /** Must not be `Record<string, never>` — that makes `keyof Views` include `string` and breaks `.from("listings")` (resolves to Views overload → `insert` is `never`). */
+    Views: {
+      [_ in never]: never;
+    };
     Functions: {
       can_initiate_rating: {
         Args: { p_rated: string; p_rater: string };
@@ -296,6 +299,8 @@ export interface Database {
       relationship_type: RelationshipType;
       notification_type: NotificationType;
     };
-    CompositeTypes: Record<string, never>;
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
 }
